@@ -30,6 +30,34 @@ export interface Product {
   updated_at?: any;
 }
 
+export interface ProductOption {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  sku: string;
+  whatsapp_image_id?: string;
+  whatsapp_image_url?: string;
+  attributes?: {
+    size?: string;
+    color?: string;
+    weight?: string;
+    [key: string]: string | undefined;
+  };
+  stock: number;
+  image_url?: string;
+  description?: string;
+  terms_of_service?: string;
+  available_for_delivery: boolean;
+  available_for_pickup: boolean;
+  created_at?: any;
+  updated_at?: any;
+  sold: number;
+  sync_status?: "pending" | "synced" | "error";
+  sync_error?: string;
+  last_synced?: any;
+}
+
 export interface Order {
   id: string;
   business_id: string;

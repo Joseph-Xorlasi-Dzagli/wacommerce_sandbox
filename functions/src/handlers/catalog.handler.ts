@@ -9,7 +9,7 @@ import { Logger } from "../utils/logger";
 import { Helpers } from "../utils/helpers";
 import { APP_CONFIG } from "../config/constants";
 import { SyncCatalogRequest, SyncInventoryRequest } from "../types/requests";
-import { Product } from "../types/entities";
+import { Product, ProductOption } from "../types/entities";
 import { SyncCatalogResponse, BaseResponse } from "../types/responses";
 
 export class CatalogHandler {
@@ -21,7 +21,7 @@ export class CatalogHandler {
     request: SyncCatalogRequest,
     userId: string
   ): Promise<SyncCatalogResponse> {
-    const { businessId, syncType, productIds } = request;
+    const { businessId, syncType, productIds, productOptionIds } = request;
 
     try {
       // Validate access
@@ -30,17 +30,18 @@ export class CatalogHandler {
       // Get WhatsApp config
       const whatsappConfig = await WhatsAppService.getConfig(businessId);
 
-      // Get products to sync
-      const products = await this.getProductsToSync(
+      // Get product options to sync
+      const productOptions = await this.getProductOptionsToSync(
         businessId,
         syncType,
-        productIds
+        productIds,
+        productOptionIds
       );
 
       Logger.info("Starting catalog sync", {
         businessId,
         syncType,
-        productCount: products.length,
+        productOptionCount: productOptions.length,
       });
 
       const results = {
@@ -51,7 +52,7 @@ export class CatalogHandler {
 
       // Process in batches
       const batches = Helpers.chunkArray(
-        products,
+        productOptions,
         APP_CONFIG.WHATSAPP.BATCH_SIZE
       );
 
@@ -84,6 +85,90 @@ export class CatalogHandler {
     } catch (error) {
       Logger.error("Catalog sync failed", error, { businessId, syncType });
       throw new HttpsError("internal", "Sync failed", (error as Error).message);
+    }
+  }
+
+  static async updateProductOption(
+    productOptionId: string,
+    businessId: string,
+    userId: string,
+    updateFields: string[]
+  ): Promise<BaseResponse> {
+    try {
+      await AuthService.validateBusinessAccess(userId, businessId);
+
+      const whatsappConfig = await WhatsAppService.getConfig(businessId);
+      const productOptionDoc = await this.db
+        .collection("product_options")
+        .doc(productOptionId)
+        .get();
+
+      if (!productOptionDoc.exists) {
+        throw new HttpsError("not-found", "Product option not found");
+      }
+
+      const productOption = productOptionDoc.data() as ProductOption;
+
+      // Verify the product option belongs to a product owned by the business
+      const productDoc = await this.db
+        .collection("products")
+        .doc(productOption.product_id)
+        .get();
+
+      if (
+        !productDoc.exists ||
+        (productDoc.data() as Product).business_id !== businessId
+      ) {
+        throw new HttpsError("not-found", "Product option not found");
+      }
+
+      // Build WhatsApp update payload
+      const updatePayload = await this.buildProductOptionPayload(
+        productOption,
+        productOptionId,
+        updateFields
+      );
+
+      // Update in WhatsApp
+      await WhatsAppService.updateCatalogProducts(whatsappConfig, [
+        updatePayload,
+      ]);
+
+      // Update local status
+      await productOptionDoc.ref.update({
+        sync_status: "synced",
+        sync_error: null,
+        last_synced: FieldValue.serverTimestamp(),
+        updated_at: FieldValue.serverTimestamp(),
+      });
+
+      Logger.info("Product option updated successfully", {
+        productOptionId,
+        updateFields,
+      });
+
+      return {
+        success: true,
+        message: "Product option updated successfully",
+      };
+    } catch (error) {
+      Logger.error("Product option update failed", error, { productOptionId });
+
+      // Update error status
+      await this.db
+        .collection("product_options")
+        .doc(productOptionId)
+        .update({
+          sync_status: "error",
+          sync_error: (error as Error).message,
+          last_synced: FieldValue.serverTimestamp(),
+        });
+
+      throw new HttpsError(
+        "internal",
+        "Update failed",
+        (error as Error).message
+      );
     }
   }
 
@@ -166,31 +251,23 @@ export class CatalogHandler {
 
       const whatsappConfig = await WhatsAppService.getConfig(businessId);
 
-      // Get products to update
-      let query = this.db
-        .collection("products")
-        .where("business_id", "==", businessId);
-
-      if (productIds && productIds.length > 0) {
-        query = query.where("id", "in", productIds);
-      }
-
-      const snapshot = await query.get();
-      const products = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Product[];
+      // Get product options to update
+      const productOptions = await this.getProductOptionsToSync(
+        businessId,
+        "full",
+        productIds
+      );
 
       const updates = [];
-      for (const product of products) {
+      for (const productOption of productOptions) {
         const updateFields = ["availability"];
         if (updatePrices) {
           updateFields.push("price");
         }
 
-        const payload = await this.buildProductPayload(
-          product,
-          product.id,
+        const payload = await this.buildProductOptionPayload(
+          productOption,
+          productOption.id,
           updateFields
         );
         updates.push(payload);
@@ -220,43 +297,142 @@ export class CatalogHandler {
     }
   }
 
-  private static async getProductsToSync(
+  private static async getProductOptionsToSync(
     businessId: string,
     syncType: "full" | "incremental" | "specific",
-    productIds?: string[]
-  ): Promise<Product[]> {
-    let query = this.db
+    productIds?: string[],
+    productOptionIds?: string[]
+  ): Promise<ProductOption[]> {
+    // If specific product option IDs are provided, fetch directly by IDs first
+    if (productOptionIds && productOptionIds.length > 0) {
+      const optionIdChunks = Helpers.chunkArray(productOptionIds, 30);
+      const collectedById: Record<string, ProductOption> = {};
+      for (const idChunk of optionIdChunks) {
+        const docSnaps = await Promise.all(
+          idChunk.map((id) =>
+            this.db.collection("product_options").doc(id).get()
+          )
+        );
+        for (const doc of docSnaps) {
+          if (!doc.exists) continue;
+          const data = doc.data() as any;
+          // If incremental, include only pending/error
+          if (
+            syncType !== "incremental" ||
+            data?.sync_status === "pending" ||
+            data?.sync_status === "error"
+          ) {
+            collectedById[doc.id] = {
+              id: doc.id,
+              ...data,
+            } as ProductOption;
+          }
+        }
+      }
+      return Object.values(collectedById);
+    }
+    // First get products for the business to get their IDs
+    const productsQuery = this.db
       .collection("products")
       .where("business_id", "==", businessId);
 
-    switch (syncType) {
-      case "full":
-        // Get all products
-        break;
-      case "incremental":
-        // Get products that need syncing
-        query = query.where("sync_status", "in", ["pending", "error"]);
-        break;
-      case "specific":
-        if (!productIds || productIds.length === 0) {
-          throw new HttpsError(
-            "invalid-argument",
-            "Product IDs required for specific sync"
-          );
-        }
-        query = query.where("id", "in", productIds);
-        break;
+    const productsSnapshot = await productsQuery.get();
+    const productIdsForBusiness = productsSnapshot.docs.map((doc) => doc.id);
+
+    if (productIdsForBusiness.length === 0) {
+      return [];
     }
 
-    const snapshot = await query.get();
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Product[];
+    // Determine target product IDs (business-wide or specific subset)
+    let targetProductIds: string[] = productIdsForBusiness;
+    if (syncType === "specific") {
+      if (
+        (!productIds || productIds.length === 0) &&
+        (!productOptionIds || productOptionIds.length === 0)
+      ) {
+        throw new HttpsError(
+          "invalid-argument",
+          "Product IDs or Product Option IDs required for specific sync"
+        );
+      }
+      const requestedProductIds = Array.isArray(productIds) ? productIds : [];
+      const validProductIds = requestedProductIds.filter((id) =>
+        productIdsForBusiness.includes(id)
+      );
+      if (validProductIds.length === 0) {
+        return [];
+      }
+      targetProductIds = validProductIds;
+    }
+
+    // If specific product option IDs are provided, fetch directly by IDs
+    if (productOptionIds && productOptionIds.length > 0) {
+      const optionIdChunks = Helpers.chunkArray(productOptionIds, 30);
+      const collectedById: Record<string, ProductOption> = {};
+      for (const idChunk of optionIdChunks) {
+        const docSnaps = await Promise.all(
+          idChunk.map((id) =>
+            this.db.collection("product_options").doc(id).get()
+          )
+        );
+        for (const doc of docSnaps) {
+          if (!doc.exists) continue;
+          const data = doc.data() as any;
+          // If incremental, include only pending/error
+          if (
+            syncType !== "incremental" ||
+            data?.sync_status === "pending" ||
+            data?.sync_status === "error"
+          ) {
+            collectedById[doc.id] = {
+              id: doc.id,
+              ...data,
+            } as ProductOption;
+          }
+        }
+      }
+      return Object.values(collectedById);
+    }
+
+    // Firestore 'in' supports up to 30 values and only one 'in' per query.
+    // Chunk the product IDs and merge results. For incremental, avoid a second 'in'
+    // by running separate equality queries for each status.
+    const chunks = Helpers.chunkArray(targetProductIds, 30);
+    const collected: Record<string, ProductOption> = {};
+
+    for (const chunk of chunks) {
+      const base = this.db
+        .collection("product_options")
+        .where("product_id", "in", chunk);
+
+      if (syncType === "incremental") {
+        const pendingSnap = await base
+          .where("sync_status", "==", "pending")
+          .get();
+        const errorSnap = await base.where("sync_status", "==", "error").get();
+
+        for (const doc of [...pendingSnap.docs, ...errorSnap.docs]) {
+          collected[doc.id] = {
+            id: doc.id,
+            ...(doc.data() as any),
+          } as ProductOption;
+        }
+      } else {
+        const snap = await base.get();
+        for (const doc of snap.docs) {
+          collected[doc.id] = {
+            id: doc.id,
+            ...(doc.data() as any),
+          } as ProductOption;
+        }
+      }
+    }
+
+    return Object.values(collected);
   }
 
   private static async processBatch(
-    products: Product[],
+    productOptions: ProductOption[],
     whatsappConfig: any,
     businessId: string
   ): Promise<{ successful: number; failed: number; errors: any[] }> {
@@ -267,16 +443,27 @@ export class CatalogHandler {
     };
 
     try {
-      // Ensure media for all products
-      for (const product of products) {
-        if (product.image_url && !product.whatsapp_image_id) {
-          await this.ensureProductMedia(businessId, product.id, product);
+      // Ensure media for all product options
+      for (const productOption of productOptions) {
+        if (productOption.image_url && !productOption.whatsapp_image_id) {
+          await this.ensureProductOptionMedia(
+            businessId,
+            productOption.id,
+            productOption
+          );
         }
       }
 
-      // Format products for WhatsApp
-      const formattedProducts = products.map((product) =>
-        this.formatProductForWhatsApp(product.id, product)
+      // Format product options for WhatsApp (with retailer_id fallback)
+      const productNameCache: Record<string, string> = {};
+      const formattedProducts = await Promise.all(
+        productOptions.map((productOption) =>
+          this.formatProductOptionForWhatsApp(
+            productOption.id,
+            productOption,
+            productNameCache
+          )
+        )
       );
 
       // Send to WhatsApp
@@ -285,113 +472,205 @@ export class CatalogHandler {
         formattedProducts
       );
 
-      // Update local status
+      // Update local status and save generated SKUs
       const batch = this.db.batch();
-      products.forEach((product) => {
-        const productRef = this.db.collection("products").doc(product.id);
-        batch.update(productRef, {
+      productOptions.forEach((productOption, index) => {
+        const productOptionRef = this.db
+          .collection("product_options")
+          .doc(productOption.id);
+
+        const updateData: any = {
           sync_status: "synced",
           sync_error: null,
           last_synced: FieldValue.serverTimestamp(),
-        });
+        };
+
+        // If no SKU exists, save the generated one
+        if (!productOption.sku || productOption.sku.trim().length === 0) {
+          const generatedSku = formattedProducts[index].retailer_id;
+          updateData.sku = generatedSku;
+        }
+
+        batch.update(productOptionRef, updateData);
       });
 
       await batch.commit();
-      result.successful = products.length;
+      result.successful = productOptions.length;
     } catch (error) {
       Logger.error("Batch processing failed", error);
 
-      // Mark all products in batch as failed
+      // Mark all product options in batch as failed
       const batch = this.db.batch();
-      products.forEach((product) => {
-        const productRef = this.db.collection("products").doc(product.id);
-        batch.update(productRef, {
+      productOptions.forEach((productOption) => {
+        const productOptionRef = this.db
+          .collection("product_options")
+          .doc(productOption.id);
+        batch.update(productOptionRef, {
           sync_status: "error",
           sync_error: (error as Error).message,
           last_synced: FieldValue.serverTimestamp(),
         });
 
         result.errors.push({
-          productId: product.id,
+          productOptionId: productOption.id,
           error: (error as Error).message,
         });
       });
 
       await batch.commit();
-      result.failed = products.length;
+      result.failed = productOptions.length;
     }
 
     return result;
   }
 
-  private static async ensureProductMedia(
+  private static async ensureProductOptionMedia(
     businessId: string,
-    productId: string,
-    product: any
+    productOptionId: string,
+    productOption: any
   ): Promise<void> {
-    if (!product.whatsapp_image_id && product.image_url) {
+    if (!productOption.whatsapp_image_id && productOption.image_url) {
       try {
         // Optimize and upload image
         const imageBuffer = await MediaService.optimizeImage(
-          product.image_url,
-          "product"
+          productOption.image_url,
+          "product_option"
         );
         const whatsappConfig = await WhatsAppService.getConfig(businessId);
         const whatsappMediaId = await WhatsAppService.uploadMedia(
           whatsappConfig,
           imageBuffer,
-          `${productId}.jpg`
+          `${productOptionId}.jpg`
         );
 
         // Store metadata
         await MediaService.storeMediaMetadata({
           businessId,
           whatsappMediaId,
-          originalUrl: product.image_url,
-          purpose: "product",
-          referenceId: productId,
-          referenceType: "products",
+          originalUrl: productOption.image_url,
+          purpose: "product_option",
+          referenceId: productOptionId,
+          referenceType: "product_options",
           fileSize: imageBuffer.length,
         });
 
-        // Update product reference
-        await MediaService.updateProductMediaReference(
-          productId,
-          whatsappMediaId,
-          product.image_url
-        );
+        // Update product option reference
+        await this.db
+          .collection("product_options")
+          .doc(productOptionId)
+          .update({
+            whatsapp_image_id: whatsappMediaId,
+            whatsapp_image_url: `https://scontent.whatsapp.net/v/t61.24694-24/${whatsappMediaId}`,
+          });
 
-        product.whatsapp_image_id = whatsappMediaId;
+        productOption.whatsapp_image_id = whatsappMediaId;
       } catch (error) {
-        Logger.error("Failed to upload product media", error, { productId });
+        Logger.error("Failed to upload product option media", error, {
+          productOptionId,
+        });
         // Continue without media
       }
     }
   }
 
-  private static formatProductForWhatsApp(
-    productId: string,
-    product: any
-  ): any {
-    // Use retailer_id if present, else fallback to productId
-    const retailerId = (product as any).retailer_id || productId;
+  private static async formatProductOptionForWhatsApp(
+    productOptionId: string,
+    productOption: any,
+    productNameCache: Record<string, string>
+  ): Promise<any> {
+    // Derive retailer_id: prefer SKU; else productName_optionName with underscores
+    let displayName = "";
+    const productId: string = productOption.product_id;
+    console.log("productId:", productId);
+    const productDoc = await this.db
+      .collection("products")
+      .doc(productId)
+      .get();
+
+    let productName = (productDoc.data() as any)?.name || "product";
+    console.log("productName:", productName);
+
+    displayName = `${productName}: ${productOption.name || ""}`.trim();
+
+    let retailerId = productOption.sku as string | undefined;
+    if (!retailerId || retailerId.trim().length === 0) {
+      if (!productName) {
+        productNameCache[productId] = productName;
+      }
+      const optionName = productOption.name || "option";
+      const normalized = (productName + "_" + optionName)
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .toLowerCase();
+      retailerId = normalized;
+    }
+
     return {
       id: retailerId,
       retailer_id: retailerId,
-      name: product.name,
-      description: product.description || "",
-      price: product.price || 0,
+      name: displayName,
+      description: productOption.description || "",
+      price: productOption.price || 0,
       availability:
-        (product.stock_quantity || 0) > 0 ? "in stock" : "out of stock",
-      brand: product.brand || "Default Brand",
-      image_url: (product as any).whatsapp_image_id
-        ? `https://scontent.whatsapp.net/v/t61.24694-24/${
-            (product as any).whatsapp_image_id
-          }`
-        : product.image_url,
-      url: `https://yourapp.com/products/${productId}`,
-      category: product.category_name || "General",
+        (productOption.stock || 0) > 0 ? "in stock" : "out of stock",
+      brand: "Default Brand", // You might want to get this from the parent product
+      image_url: productOption.whatsapp_image_id
+        ? `https://scontent.whatsapp.net/v/t61.24694-24/${productOption.whatsapp_image_id}`
+        : productOption.image_url,
+      url: `https://yourapp.com/product-options/${productOptionId}`,
+      category: "General", // You might want to get this from the parent product
     };
+  }
+
+  private static async buildProductOptionPayload(
+    productOption: ProductOption,
+    productOptionId: string,
+    updateFields: string[]
+  ): Promise<any> {
+    // Derive retailer_id: prefer SKU; else productName_optionName with underscores
+    let retailerId = productOption.sku as string | undefined;
+    if (!retailerId || retailerId.trim().length === 0) {
+      const productDoc = await this.db
+        .collection("products")
+        .doc(productOption.product_id)
+        .get();
+      const productName = (productDoc.data() as any)?.name || "product";
+      const optionName = productOption.name || "option";
+      retailerId = (productName + "_" + optionName)
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .toLowerCase();
+    }
+    const payload: any = {
+      id: retailerId,
+      retailer_id: retailerId,
+    };
+
+    if (updateFields.includes("name")) {
+      payload.name = productOption.name;
+    }
+
+    if (updateFields.includes("price")) {
+      payload.price = productOption.price || 0;
+    }
+
+    if (updateFields.includes("description")) {
+      payload.description = productOption.description || "";
+    }
+
+    if (updateFields.includes("availability")) {
+      payload.availability =
+        productOption.stock > 0 ? "in stock" : "out of stock";
+    }
+
+    if (updateFields.includes("image_url") && productOption.whatsapp_image_id) {
+      payload.image_url = `https://scontent.whatsapp.net/v/t61.24694-24/${productOption.whatsapp_image_id}`;
+    }
+
+    // Add brand (you might want to get this from the parent product)
+    payload.brand = "Default Brand";
+
+    return payload;
   }
 
   private static async buildProductPayload(

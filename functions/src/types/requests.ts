@@ -4,6 +4,7 @@ export interface SyncCatalogRequest {
   businessId: string;
   syncType: "full" | "incremental" | "specific";
   productIds?: string[];
+  productOptionIds?: string[];
   includeCategories?: boolean;
 }
 

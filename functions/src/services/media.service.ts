@@ -95,9 +95,9 @@ export class MediaService {
     productId: string,
     whatsappMediaId: string,
     originalUrl: string,
-    referenceType: "products" | "categories" = "products"
+    referenceType: "products" | "product_options" | "categories" = "products"
   ): Promise<void> {
-    const collection = referenceType === "products" ? "products" : "categories";
+    const collection = referenceType;
 
     await this.db.collection(collection).doc(productId).update({
       whatsapp_image_id: whatsappMediaId,

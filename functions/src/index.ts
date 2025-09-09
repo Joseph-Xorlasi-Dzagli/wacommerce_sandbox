@@ -89,10 +89,27 @@ export const syncProductCatalog = onCall(
   }
 );
 
+/**
+ * Example API call format for updateProductInventory:
+ *
+ * updateProductInventory({
+ *   data: {
+ *     productId: "your-product-id",
+ *     businessId: "your-business-id",
+ *     updateFields: ["quantity", "price"] // array of fields to update
+ *   },
+ *   auth: {
+ *     uid: "user-uid" // (optional, provided automatically if authenticated)
+ *   }
+ * })
+ */
 export const updateProductInventory = onCall(
   { memory: "512MiB", timeoutSeconds: 300 },
   async (request) => {
     try {
+      // The `auth` object is automatically populated by Firebase when the callable function is invoked
+      // from a client SDK that is authenticated. It is available as `request.auth` and contains the user's UID.
+      // See: https://firebase.google.com/docs/functions/callable#access_user_information
       console.log("📦 updateProductInventory called");
       console.log("Request data:", request.data);
 
@@ -102,7 +119,7 @@ export const updateProductInventory = onCall(
         throw new Error("No data provided in request");
       }
 
-      const userId = auth?.uid || "test-user-123";
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
 
       if (!userId) {
         throw new Error("Authentication required");
@@ -116,6 +133,41 @@ export const updateProductInventory = onCall(
       );
     } catch (error) {
       console.error("❌ updateProductInventory error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+);
+
+export const updateProductOption = onCall(
+  { memory: "512MiB", timeoutSeconds: 300 },
+  async (request) => {
+    try {
+      console.log("📦 updateProductOption called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await CatalogHandler.updateProductOption(
+        data.productOptionId,
+        data.businessId,
+        userId,
+        data.updateFields
+      );
+    } catch (error) {
+      console.error("❌ updateProductOption error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -138,7 +190,7 @@ export const uploadProductMedia = onCall(
         throw new Error("No data provided in request");
       }
 
-      const userId = auth?.uid || "test-user-123";
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
 
       if (!userId) {
         throw new Error("Authentication required");
@@ -168,7 +220,7 @@ export const refreshExpiredMedia = onCall(
         throw new Error("No data provided in request");
       }
 
-      const userId = auth?.uid || "test-user-123";
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
 
       if (!userId) {
         throw new Error("Authentication required");
@@ -203,7 +255,7 @@ export const sendOrderNotification = onCall(
         throw new Error("No data provided in request");
       }
 
-      const userId = auth?.uid || "test-user-123";
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
 
       if (!userId) {
         throw new Error("Authentication required");

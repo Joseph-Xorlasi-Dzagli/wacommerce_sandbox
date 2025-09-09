@@ -1140,6 +1140,16 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "whatsapp_media",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "business_id", "order": "ASCENDING" },
+        { "fieldPath": "upload_status", "order": "ASCENDING" },
+        { "fieldPath": "expires_at", "order": "ASCENDING" }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "whatsapp_sessions",
       "queryScope": "COLLECTION",
       "fields": [

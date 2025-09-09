@@ -46,17 +46,19 @@ npm run shell
 **1. Test Basic Function**
 ```javascript
 // Test the basic test function
-testFunction({ message: "Hello World" })
+testFunction({"data":{ message: "Hello World" }})
 ```
 
 **2. Test Catalog Sync**
 ```javascript
+
 // Full catalog sync
 syncProductCatalog({"data":{
     "businessId": "R7CeDIFCL3BtQRbPrM1X",
     "syncType": "full"}
 })
 
+, 
 
 
 // Incremental sync (only products that need syncing)
@@ -69,27 +71,42 @@ syncProductCatalog({"data":{
 syncProductCatalog({"data":{
     "businessId": "R7CeDIFCL3BtQRbPrM1X",
     "syncType": "specific", 
-    "productIds": ["1BenFTOLVciKpCDFM5Rg", "2FNio6EFi6aoPAh45Eeb"]
+    "productIds": ["9674011849346532", "29731645503115608"]
 }
 })
-How Product IDs Work in Sync Catalog
-Table Name: products (Firestore collection)
-Looking at the code in catalog.handler.ts, here's how the product ID is determined:
-// In formatProductForWhatsApp method (lines 376-377):
-const retailerId = (product as any).retailer_id || productId;
-
-// In buildProductPayload method (lines 402-403):
-const retailerId = (product as any).retailer_id || productId;
-Priority Order:
-First Priority: retailer_id field (if present)
-Fallback: Document id (Firestore document ID)
 
 syncProductCatalog({"data":{
-  businessId: "R7CeDIFCL3BtQRbPrM1X",
-  syncType: "specific",
-  productIds: ["XBZPOpV8By7KJxnOPves", "10077300928955678"]
+    "businessId": "R7CeDIFCL3BtQRbPrM1X",
+    "syncType": "specific", 
+    "productOptionIds": ["8WtheSwdFxvh8e0JwoGo", "JtL9BkQXsYH0rN4eNGUF"]
 }
 })
+```
+
+
+
+**3. Test Media Refresh**
+```javascript
+auth = { uid:"Sj49CwIhb3YMjEFl0HmgbRRrfNH3"}
+refreshExpiredMedia({"data":{
+    "businessId": "R7CeDIFCL3BtQRbPrM1X",
+    "bufferDays": 1
+  }}
+)
+
+refreshExpiredMedia({
+   data: {
+     "businessId": "R7CeDIFCL3BtQRbPrM1X","=
+     "bufferDays": 7
+   },
+   auth: {
+     uid: "Sj49CwIhb3YMjEFl0HmgbRRrfNH3"
+   }
+ })
+refreshExpiredMedia({"data":{"businessId": "R7CeDIFCL3BtQRbPrM1X","bufferDays": 7, "auth":{"uid":"Sj49CwIhb3YMjEFl0HmgbRRrfNH3"}}})
+
+
+
 ```
 
 **3. Test Product Inventory Update**
@@ -114,10 +131,10 @@ uploadProductMedia({
 
 **5. Test Media Refresh**
 ```javascript
-refreshExpiredMedia({
+refreshExpiredMedia({"data":{
   businessId: "test-business-123",
   bufferDays: 7
-})
+}})
 ```
 
 **6. Test Order Notification**
