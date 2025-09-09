@@ -87,29 +87,44 @@ syncProductCatalog({"data":{
 
 **3. Test Media Refresh**
 ```javascript
-auth = { uid:"Sj49CwIhb3YMjEFl0HmgbRRrfNH3"}
 refreshExpiredMedia({"data":{
     "businessId": "R7CeDIFCL3BtQRbPrM1X",
     "bufferDays": 1
   }}
 )
-
-refreshExpiredMedia({
-   data: {
-     "businessId": "R7CeDIFCL3BtQRbPrM1X","=
-     "bufferDays": 7
-   },
-   auth: {
-     uid: "Sj49CwIhb3YMjEFl0HmgbRRrfNH3"
-   }
- })
-refreshExpiredMedia({"data":{"businessId": "R7CeDIFCL3BtQRbPrM1X","bufferDays": 7, "auth":{"uid":"Sj49CwIhb3YMjEFl0HmgbRRrfNH3"}}})
-
-
-
 ```
 
-**3. Test Product Inventory Update**
+**4. Test Media Upload**
+```javascript
+uploadProductMedia({"data":{
+  businessId: "R7CeDIFCL3BtQRbPrM1X",
+  imageUrl: "https://firebasestorage.googleapis.com/v0/b/apsel-c9e99.firebasestorage.app/o/businesses%2FR7CeDIFCL3BtQRbPrM1X%2Fproducts%2Fc0d6e2f4-51ad-4acd-ab04-09d822e09d85.jpg?alt=media&token=10ad6b0c-47c4-48be-9540-bd1e208b70f3",
+  purpose: "product",
+  referenceId: "1BenFTOLVciKpCDFM5Rg",
+  referenceType: "product_options"
+}})
+
+uploadProductMedia({
+  businessId: "R7CeDIFCL3BtQRbPrM1X",
+  imageUrl: "https://firebasestorage.googleapis.com/v0/b/apsel-c9e99.firebasestorage.app/o/businesses%2FR7CeDIFCL3BtQRbPrM1X%2Fproducts%2Fc0d6e2f4-51ad-4acd-ab04-09d822e09d85.jpg?alt=media&token=10ad6b0c-47c4-48be-9540-bd1e208b70f3",
+  purpose: "product",
+  referenceId: "test-product-123",
+  referenceType: "products"
+})
+```
+
+
+**5. Test Order Notification**
+```javascript
+sendOrderNotification({"data":{
+  orderId: "1N6HMXv8MtgOG2PD7ZSz",
+  businessId: "R7CeDIFCL3BtQRbPrM1X",
+  notificationType: "order_confirmed",
+  customMessage: "Your order has been confirmed!"
+}})
+```
+
+**6. Test Product Inventory Update**
 ```javascript
 updateProductInventory({
   productId: "test-product-123",
@@ -118,56 +133,10 @@ updateProductInventory({
 })
 ```
 
-**4. Test Media Upload**
-```javascript
-uploadProductMedia({
-  businessId: "test-business-123",
-  imageUrl: "https://example.com/image.jpg",
-  purpose: "product",
-  referenceId: "test-product-123",
-  referenceType: "products"
-})
-```
 
-**5. Test Media Refresh**
-```javascript
-refreshExpiredMedia({"data":{
-  businessId: "test-business-123",
-  bufferDays: 7
-}})
-```
-
-**6. Test Order Notification**
-```javascript
-sendOrderNotification({
-  orderId: "test-order-123",
-  businessId: "test-business-123",
-  notificationType: "order_confirmed",
-  customMessage: "Your order has been confirmed!"
-})
-```
-
-#### Step 3: Run Complete Test Suite
-Copy and paste this complete test script in the shell:
 
 ```javascript
-// Complete test suite for Firebase Functions shell
-console.log("🧪 Starting Complete API Test Suite...\n");
 
-async function runCompleteTests() {
-  try {
-    // 1. Test basic function
-    console.log("1️⃣ Testing basic function...");
-    const testResult = await testFunction({ message: "API Test" });
-    console.log("✅ Test function result:", testResult);
-
-    // 2. Test catalog sync
-    console.log("\n2️⃣ Testing catalog sync...");
-    const syncResult = await syncProductCatalog({
-      businessId: "test-business-123",
-      syncType: "full"
-    });
-    console.log("✅ Catalog sync result:", syncResult);
 
     // 3. Test product update
     console.log("\n3️⃣ Testing product update...");
@@ -178,79 +147,9 @@ async function runCompleteTests() {
     });
     console.log("✅ Product update result:", updateResult);
 
-    // 4. Test media upload
-    console.log("\n4️⃣ Testing media upload...");
-    const mediaResult = await uploadProductMedia({
-      businessId: "test-business-123",
-      imageUrl: "https://picsum.photos/800/800",
-      purpose: "product",
-      referenceId: "test-product-123",
-      referenceType: "products"
-    });
-    console.log("✅ Media upload result:", mediaResult);
 
-    // 5. Test media refresh
-    console.log("\n5️⃣ Testing media refresh...");
-    const refreshResult = await refreshExpiredMedia({
-      businessId: "test-business-123",
-      bufferDays: 7
-    });
-    console.log("✅ Media refresh result:", refreshResult);
-
-    // 6. Test notification
-    console.log("\n6️⃣ Testing order notification...");
-    const notificationResult = await sendOrderNotification({
-      orderId: "test-order-123",
-      businessId: "test-business-123",
-      notificationType: "order_confirmed",
-      customMessage: "Test notification message"
-    });
-    console.log("✅ Notification result:", notificationResult);
-
-    console.log("\n🎉 All API tests completed successfully!");
-    
-  } catch (error) {
-    console.error("❌ Test failed:", error);
-  }
-}
-
-// Run the complete test suite
-runCompleteTests();
 ```
 
-### Method 2: HTTP Testing (Webhook Only)
-
-#### Test Webhook Verification (GET)
-```bash
-curl "http://localhost:5001/your-project-id/us-central1/whatsappWebhook?hub.mode=subscribe&hub.verify_token=LetsbuildApsel&hub.challenge=test-challenge"
-```
-
-#### Test Webhook Processing (POST)
-```bash
-curl -X POST "http://localhost:5001/your-project-id/us-central1/whatsappWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "object": "whatsapp_business_account",
-    "entry": [{
-      "id": "test-entry",
-      "changes": [{
-        "value": {
-          "messaging_product": "whatsapp",
-          "messages": [{
-            "from": "1234567890",
-            "id": "test-message-id",
-            "timestamp": "1234567890",
-            "text": {
-              "body": "Hello, this is a test message!"
-            },
-            "type": "text"
-          }]
-        },
-        "field": "messages"
-      }]
-    }]
-  }'
-```
 
 ### Method 3: Automated Test Scripts
 
@@ -305,59 +204,8 @@ const testOrder = {
 }
 ```
 
-## 🔧 Advanced Testing Scenarios
 
-### 1. Error Handling Tests
-```javascript
-// Test with invalid business ID
-syncProductCatalog({
-  businessId: "invalid-business-id",
-  syncType: "full"
-})
 
-// Test with missing required fields
-updateProductInventory({
-  productId: "test-product",
-  // Missing businessId and updateFields
-})
-```
-
-### 2. Batch Operations
-```javascript
-// Test specific product sync
-syncProductCatalog({
-  businessId: "test-business-123",
-  syncType: "specific",
-  productIds: ["prod-1", "prod-2", "prod-3"]
-})
-
-// Test media refresh with custom buffer
-refreshExpiredMedia({
-  businessId: "test-business-123",
-  bufferDays: 14
-})
-```
-
-### 3. Different Notification Types
-```javascript
-// Test different notification types
-const notificationTypes = [
-  "status_change",
-  "payment_received", 
-  "shipping_update",
-  "order_confirmed",
-  "order_delivered"
-];
-
-notificationTypes.forEach(async (type) => {
-  await sendOrderNotification({
-    orderId: "test-order-123",
-    businessId: "test-business-123",
-    notificationType: type,
-    customMessage: `Test ${type} notification`
-  });
-});
-```
 
 ## �� Monitoring & Debugging
 

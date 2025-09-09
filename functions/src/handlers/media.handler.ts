@@ -9,6 +9,7 @@ import { Logger } from "../utils/logger";
 import { Helpers } from "../utils/helpers";
 import { Validator } from "../utils/validation";
 import { UploadMediaRequest, UploadMediaResponse } from "../types/requests";
+import { APP_CONFIG } from "../config/constants";
 
 export class MediaHandler {
   private static get db() {
@@ -202,28 +203,38 @@ export class MediaHandler {
 
       for (const media of expiringMedia) {
         try {
-          // Re-upload media
-          const uploadResult = await this.uploadMedia(
-            {
-              businessId,
-              imageUrl: media.original_url,
-              purpose: media.purpose,
-              referenceId: media.reference_id,
-              referenceType: media.reference_type,
-            },
-            userId
+          // Re-upload media directly (don't create new document)
+          const whatsappConfig = await WhatsAppService.getConfig(businessId);
+
+          // Optimize image
+          const optimizedBuffer = await MediaService.optimizeImage(
+            media.original_url,
+            media.purpose
           );
 
-          if (uploadResult.success) {
-            // Mark old media as expired
-            await this.db.collection("whatsapp_media").doc(media.id).update({
-              upload_status: "expired",
-              expired_at: FieldValue.serverTimestamp(),
+          // Upload to WhatsApp
+          const whatsappMediaId = await WhatsAppService.uploadMedia(
+            whatsappConfig,
+            optimizedBuffer,
+            `${media.reference_id}.jpg`
+          );
+
+          // Update the existing media record with new WhatsApp media ID
+          await this.db
+            .collection("whatsapp_media")
+            .doc(media.id)
+            .update({
+              whatsapp_media_id: whatsappMediaId,
+              upload_status: "uploaded",
+              uploaded_at: FieldValue.serverTimestamp(),
+              expires_at: new Date(
+                Date.now() +
+                  APP_CONFIG.WHATSAPP.MEDIA_EXPIRES_DAYS * 24 * 60 * 60 * 1000
+              ),
+              updated_at: FieldValue.serverTimestamp(),
             });
-            results.refreshed++;
-          } else {
-            throw new Error(uploadResult.error || "Upload failed");
-          }
+
+          results.refreshed++;
         } catch (error) {
           results.failed++;
           results.errors.push({
