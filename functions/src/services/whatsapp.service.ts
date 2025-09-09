@@ -2,7 +2,7 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import axios from "axios";
-import { APP_CONFIG, ERROR_CODES } from "../config/constants";
+import { APP_CONFIG } from "../config/constants";
 import { Encryption } from "../utils/encryption";
 import { Logger } from "../utils/logger";
 import type { WhatsAppConfig } from "../types/entities";
@@ -12,26 +12,26 @@ export class WhatsAppService {
     return getFirestore();
   }
 
-  static async getConfig(businessId: string): Promise<WhatsAppConfig> {
-    const configDoc = await this.db
-      .collection("whatsapp_configs")
-      .doc(businessId)
-      .get();
+  // static async getConfig(businessId: string): Promise<WhatsAppConfig> {
+  //   const configDoc = await this.db
+  //     .collection("whatsapp_configs")
+  //     .doc(businessId)
+  //     .get();
 
-    if (!configDoc.exists || !configDoc.data()?.active) {
-      throw new HttpsError(
-        "failed-precondition",
-        ERROR_CODES.WHATSAPP_NOT_CONFIGURED
-      );
-    }
+  //   if (!configDoc.exists || !configDoc.data()?.active) {
+  //     throw new HttpsError(
+  //       "failed-precondition",
+  //       ERROR_CODES.WHATSAPP_NOT_CONFIGURED
+  //     );
+  //   }
 
-    const config = configDoc.data() as WhatsAppConfig;
+  //   const config = configDoc.data() as WhatsAppConfig;
 
-    // Decrypt access token
-    config.access_token = Encryption.decrypt(config.access_token);
+  //   // Decrypt access token
+  //   config.access_token = Encryption.decrypt(config.access_token);
 
-    return config;
-  }
+  //   return config;
+  // }
 
   static async sendMessage(
     config: WhatsAppConfig,
@@ -104,15 +104,35 @@ export class WhatsAppService {
     config: WhatsAppConfig,
     products: any[]
   ): Promise<void> {
-    await axios.post(
-      `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${config.catalog_id}/batch`,
-      {
-        allow_upsert: true,
-        requests: products.map((product) => ({
-          method: "UPDATE",
-          data: product,
-        })),
+    const formattedProducts = products.map((product) => ({
+      method: "UPDATE",
+      data: {
+        id: product.retailer_id || product.id,
+        title: product.name,
+        description: product.description || "",
+        price: `${Math.round(product.price || 0)} GHS`,
+        availability: product.availability || "in stock",
+        condition: "new",
+        brand: product.brand || "Default Brand",
+        link: product.url || `https://yourapp.com/products/${product.id}`,
+        image: product.image_url
+          ? [
+              {
+                url: product.image_url,
+              },
+            ]
+          : undefined,
       },
+    }));
+
+    const payload = {
+      requests: formattedProducts,
+      item_type: "PRODUCT_ITEM",
+    };
+
+    const response = await axios.post(
+      `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${config.catalog_id}/items_batch`,
+      payload,
       {
         headers: {
           Authorization: `Bearer ${config.access_token}`,
@@ -122,7 +142,15 @@ export class WhatsAppService {
       }
     );
 
-    Logger.info("Catalog batch updated", {
+    // Print the HTTP response from WhatsApp API
+    console.log("WhatsApp API response (updateCatalogProducts)", {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+      headers: response.headers,
+    });
+
+    console.log("Catalog batch updated", {
       productsCount: products.length,
       catalogId: config.catalog_id,
     });
@@ -132,14 +160,19 @@ export class WhatsAppService {
     config: WhatsAppConfig,
     productIds: string[]
   ): Promise<void> {
-    await axios.post(
-      `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${config.catalog_id}/batch`,
-      {
-        requests: productIds.map((productId) => ({
-          method: "DELETE",
-          retailer_id: productId,
-        })),
-      },
+    const payload = {
+      requests: productIds.map((productId) => ({
+        method: "DELETE",
+        data: {
+          id: productId,
+        },
+      })),
+      item_type: "PRODUCT_ITEM",
+    };
+
+    const response = await axios.post(
+      `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${config.catalog_id}/items_batch`,
+      payload,
       {
         headers: {
           Authorization: `Bearer ${config.access_token}`,
@@ -148,6 +181,14 @@ export class WhatsAppService {
         timeout: 30000,
       }
     );
+
+    // Print the HTTP response from WhatsApp API
+    console.log("WhatsApp API response (deleteCatalogProducts)", {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+      headers: response.headers,
+    });
 
     Logger.info("Catalog products deleted", {
       deletedCount: productIds.length,
@@ -179,6 +220,43 @@ export class WhatsAppService {
     // Remove all non-digits and ensure proper format
     const cleaned = phone.replace(/\D/g, "");
     return cleaned.startsWith("233") ? cleaned : `233${cleaned}`;
+  }
+
+  // Add this method to handle development tokens
+  static async getConfig(businessId: string): Promise<WhatsAppConfig> {
+    const configDoc = await this.db
+      .collection("whatsapp_configs")
+      .doc(businessId)
+      .get();
+
+    if (!configDoc.exists || !configDoc.data()?.active) {
+      throw new HttpsError(
+        "failed-precondition",
+        "WhatsApp not configured for this business"
+      );
+    }
+
+    const config = configDoc.data() as WhatsAppConfig;
+
+    // Handle development - don't decrypt if token doesn't look encrypted
+    try {
+      if (
+        config.access_token &&
+        !config.access_token.startsWith("DEV_UNENCRYPTED:")
+      ) {
+        config.access_token = Encryption.decrypt(config.access_token);
+      } else if (config.access_token?.startsWith("DEV_UNENCRYPTED:")) {
+        config.access_token = config.access_token.replace(
+          "DEV_UNENCRYPTED:",
+          ""
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  Development: Using access token as-is");
+      // In development, use the token as-is if decryption fails
+    }
+
+    return config;
   }
 
   static async validateWebhookSignature(

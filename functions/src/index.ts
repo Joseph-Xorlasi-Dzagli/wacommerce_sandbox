@@ -1,4 +1,5 @@
-// functions/src/index.ts
+// Fixed index.ts - Replace your functions/src/index.ts with this
+
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onCall, onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
@@ -16,41 +17,110 @@ setGlobalOptions({
   maxInstances: 10,
 });
 
-// Catalog Management Functions
+// Simple test function
+export const testFunction = onCall(async (request) => {
+  console.log("🧪 Test function called");
+  console.log("Request data:", request.data);
+
+  return {
+    success: true,
+    message: "Test function is working!",
+    receivedData: request.data,
+    timestamp: new Date().toISOString(),
+    auth: request.auth ? { uid: request.auth.uid } : null,
+  };
+});
+
+// Fixed catalog sync function - no circular JSON logging
 export const syncProductCatalog = onCall(
   { memory: "1GiB", timeoutSeconds: 540 },
   async (request) => {
-    const { data, auth } = request;
+    try {
+      console.log("🔄 syncProductCatalog called");
 
-    // TEMPORARY: Skip auth for local testing
-    const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+      // Safe logging - only log the data, not the entire request
+      console.log("📦 Request data:", request.data);
+      console.log("👤 Auth UID:", request.auth?.uid || "none");
 
-    if (!userId) {
-      throw new Error("Authentication required");
+      const { data, auth } = request;
+
+      // Validate that we have data
+      if (!data) {
+        console.error("❌ No data received in request");
+        throw new Error(
+          "No data provided in request. Please ensure you're passing data to the function."
+        );
+      }
+
+      // Validate required fields
+      if (!data.businessId) {
+        throw new Error("businessId is required");
+      }
+
+      if (!data.syncType) {
+        throw new Error(
+          "syncType is required (full, incremental, or specific)"
+        );
+      }
+
+      // TEMPORARY: Skip auth for local testing
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+      console.log("👤 Using userId:", userId);
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      console.log("🚀 Calling CatalogHandler.syncCatalog...");
+      const result = await CatalogHandler.syncCatalog(data, userId);
+      console.log("✅ CatalogHandler completed successfully");
+
+      return result;
+    } catch (error) {
+      console.error("❌ syncProductCatalog error:", error);
+
+      // Return a proper error response instead of throwing
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        details: "Check the function logs for more information",
+      };
     }
-
-    return await CatalogHandler.syncCatalog(data, userId);
   }
 );
 
 export const updateProductInventory = onCall(
   { memory: "512MiB", timeoutSeconds: 300 },
   async (request) => {
-    const { data, auth } = request;
+    try {
+      console.log("📦 updateProductInventory called");
+      console.log("Request data:", request.data);
 
-    // TEMPORARY: Skip auth for local testing
-    const userId = auth?.uid || "test-user-123";
+      const { data, auth } = request;
 
-    if (!userId) {
-      throw new Error("Authentication required");
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "test-user-123";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await CatalogHandler.updateProduct(
+        data.productId,
+        data.businessId,
+        userId,
+        data.updateFields
+      );
+    } catch (error) {
+      console.error("❌ updateProductInventory error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return await CatalogHandler.updateProduct(
-      data.productId,
-      data.businessId,
-      userId,
-      data.updateFields
-    );
   }
 );
 
@@ -58,36 +128,64 @@ export const updateProductInventory = onCall(
 export const uploadProductMedia = onCall(
   { memory: "1GiB", timeoutSeconds: 300 },
   async (request) => {
-    const { data, auth } = request;
+    try {
+      console.log("📸 uploadProductMedia called");
+      console.log("Request data:", request.data);
 
-    // TEMPORARY: Skip auth for local testing
-    const userId = auth?.uid || "test-user-123";
+      const { data, auth } = request;
 
-    if (!userId) {
-      throw new Error("Authentication required");
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "test-user-123";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await MediaHandler.uploadMedia(data, userId);
+    } catch (error) {
+      console.error("❌ uploadProductMedia error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return await MediaHandler.uploadMedia(data, userId);
   }
 );
 
 export const refreshExpiredMedia = onCall(
   { memory: "512MiB", timeoutSeconds: 540 },
   async (request) => {
-    const { data, auth } = request;
+    try {
+      console.log("🔄 refreshExpiredMedia called");
+      console.log("Request data:", request.data);
 
-    // TEMPORARY: Skip auth for local testing
-    const userId = auth?.uid || "test-user-123";
+      const { data, auth } = request;
 
-    if (!userId) {
-      throw new Error("Authentication required");
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "test-user-123";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await MediaHandler.refreshExpiredMedia(
+        data.businessId,
+        userId,
+        data.bufferDays
+      );
+    } catch (error) {
+      console.error("❌ refreshExpiredMedia error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return await MediaHandler.refreshExpiredMedia(
-      data.businessId,
-      userId,
-      data.bufferDays
-    );
   }
 );
 
@@ -95,22 +193,36 @@ export const refreshExpiredMedia = onCall(
 export const sendOrderNotification = onCall(
   { memory: "256MiB", timeoutSeconds: 60 },
   async (request) => {
-    const { data, auth } = request;
+    try {
+      console.log("📨 sendOrderNotification called");
+      console.log("Request data:", request.data);
 
-    // TEMPORARY: Skip auth for local testing
-    const userId = auth?.uid || "test-user-123";
+      const { data, auth } = request;
 
-    if (!userId) {
-      throw new Error("Authentication required");
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "test-user-123";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await NotificationHandler.sendOrderNotification(
+        data.orderId,
+        data.businessId,
+        data.notificationType,
+        userId,
+        data.customMessage
+      );
+    } catch (error) {
+      console.error("❌ sendOrderNotification error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return await NotificationHandler.sendOrderNotification(
-      data.orderId,
-      data.businessId,
-      data.notificationType,
-      userId,
-      data.customMessage
-    );
   }
 );
 
@@ -118,31 +230,38 @@ export const sendOrderNotification = onCall(
 export const whatsappWebhook = onRequest(
   { memory: "256MiB" },
   async (req, res) => {
-    if (req.method === "GET") {
-      // Webhook verification
-      const mode = req.query["hub.mode"];
-      const token = req.query["hub.verify_token"];
-      const challenge = req.query["hub.challenge"];
+    try {
+      if (req.method === "GET") {
+        // Webhook verification
+        const mode = req.query["hub.mode"];
+        const token = req.query["hub.verify_token"];
+        const challenge = req.query["hub.challenge"];
 
-      if (
-        mode === "subscribe" &&
-        token === APP_CONFIG.WHATSAPP.WEBHOOK_VERIFY_TOKEN
-      ) {
-        res.status(200).send(challenge);
-      } else {
-        res.status(403).send("Forbidden");
-      }
-    } else if (req.method === "POST") {
-      // Process webhook data
-      try {
+        console.log("🔍 Webhook verification:", { mode, token, challenge });
+
+        if (
+          mode === "subscribe" &&
+          token === APP_CONFIG.WHATSAPP.WEBHOOK_VERIFY_TOKEN
+        ) {
+          console.log("✅ Webhook verified successfully");
+          res.status(200).send(challenge);
+        } else {
+          console.log("❌ Webhook verification failed");
+          res.status(403).send("Forbidden");
+        }
+      } else if (req.method === "POST") {
+        // Process webhook data - safe logging
+        console.log("📨 Processing webhook data");
+        console.log("Body keys:", Object.keys(req.body || {}));
+
         await NotificationHandler.processWebhook(req.body);
         res.status(200).send("OK");
-      } catch (error) {
-        console.error("Webhook processing error:", error);
-        res.status(500).send("Error");
+      } else {
+        res.status(405).send("Method not allowed");
       }
-    } else {
-      res.status(405).send("Method not allowed");
+    } catch (error) {
+      console.error("❌ Webhook processing error:", error);
+      res.status(500).send("Error");
     }
   }
 );

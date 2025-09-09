@@ -2,12 +2,12 @@
 
 export const APP_CONFIG = {
   WHATSAPP: {
-    API_VERSION: "v22wa.0",
+    API_VERSION: "v22.0",
     BASE_URL: "https://graph.facebook.com",
     BATCH_SIZE: 10,
     MEDIA_EXPIRES_DAYS: 30,
     MAX_RETRIES: 3,
-    WEBHOOK_VERIFY_TOKEN: "your_webhook_verify_token",
+    WEBHOOK_VERIFY_TOKEN: "LetsbuildApsel",
     RATE_LIMIT: {
       MESSAGES_PER_SECOND: 20,
       CATALOG_OPERATIONS_PER_MINUTE: 100,
@@ -95,3 +95,4 @@ export const MEDIA_PURPOSES = {
   CAROUSEL: "carousel",
   FALLBACK: "fallback",
 } as const;
+

@@ -52,6 +52,46 @@ syncProductCatalog({
     "syncType": "full"
 })
 
+syncProductCatalog({"data":{
+    "businessId": "R7CeDIFCL3BtQRbPrM1X",
+    "syncType": "full"}
+})
+
+{
+    "data": {
+        "productId": 123456,
+        "quantity": 100
+    }
+}
+syncProductCatalog({
+  businessId: "R7CeDIFCL3BtQRbPrM1X,
+  syncType: "full",
+  includeCategories: true
+})
+
+
+// Test with your actual business ID from Firestore
+syncProductCatalog({
+  businessId: "your-actual-business-id", // From your businesses collection
+  syncType: "full", // Options: "full", "incremental", "specific"
+  productIds: [] // Only needed for "specific" sync type
+})
+
+// Test incremental sync (only products that need syncing)
+syncProductCatalog({
+  businessId: "your-actual-business-id",
+  syncType: "incremental"
+})
+
+// Test specific products
+syncProductCatalog({
+  businessId: "your-actual-business-id",
+  syncType: "specific",
+  productIds: ["product-id-1", "product-id-2"]
+})
+
+// testFunction({"data":{ message: "hello world" }, "auth": {"uid": "Sj49CwIhb3YMjEFl0HmgbRRrfNH3"}})
+
 // Test updateProductInventory
 updateProductInventory({
   productId: "test-product-123",

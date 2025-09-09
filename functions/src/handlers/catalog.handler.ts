@@ -376,18 +376,19 @@ export class CatalogHandler {
     // Use retailer_id if present, else fallback to productId
     const retailerId = (product as any).retailer_id || productId;
     return {
+      id: retailerId,
       retailer_id: retailerId,
       name: product.name,
       description: product.description || "",
-      price: Math.round((product.price || 0) * 100), // Convert to cents
-      currency: "GHS",
+      price: product.price || 0,
       availability:
         (product.stock_quantity || 0) > 0 ? "in stock" : "out of stock",
+      brand: product.brand || "Default Brand",
       image_url: (product as any).whatsapp_image_id
         ? `https://scontent.whatsapp.net/v/t61.24694-24/${
             (product as any).whatsapp_image_id
           }`
-        : undefined,
+        : product.image_url,
       url: `https://yourapp.com/products/${productId}`,
       category: product.category_name || "General",
     };
@@ -401,6 +402,7 @@ export class CatalogHandler {
     // Use retailer_id if present, else fallback to productId
     const retailerId = (product as any).retailer_id || productId;
     const payload: any = {
+      id: retailerId,
       retailer_id: retailerId,
     };
 
@@ -409,8 +411,7 @@ export class CatalogHandler {
     }
 
     if (updateFields.includes("price")) {
-      payload.price = Math.round(product.price * 100);
-      payload.currency = "GHS";
+      payload.price = product.price || 0;
     }
 
     if (updateFields.includes("description")) {
@@ -424,6 +425,11 @@ export class CatalogHandler {
 
     if (updateFields.includes("image_url") && product.whatsapp_image_id) {
       payload.image_url = `https://scontent.whatsapp.net/v/t61.24694-24/${product.whatsapp_image_id}`;
+    }
+
+    // Add brand if available
+    if ((product as any).brand) {
+      payload.brand = (product as any).brand;
     }
 
     return payload;

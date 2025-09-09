@@ -24,6 +24,7 @@ export interface Product {
   sync_error?: string;
   category_name?: string;
   retailer_id?: string;
+  brand?: string;
   last_synced?: any;
   created_at?: any;
   updated_at?: any;
