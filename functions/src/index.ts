@@ -7,6 +7,7 @@ import { CatalogHandler } from "./handlers/catalog.handler";
 import { MediaHandler } from "./handlers/media.handler";
 import { NotificationHandler } from "./handlers/notification.handler";
 import { MediaCardCarouselHandler } from "./handlers/media-card-carousel.handler";
+import { ProductCardCarouselHandler } from "./handlers/product-card-carousel.handler";
 import { APP_CONFIG } from "./config/constants";
 
 // Initialize Firebase Admin
@@ -411,6 +412,106 @@ export const getMediaCardCarouselTemplates = onCall(
       );
     } catch (error) {
       console.error("❌ getMediaCardCarouselTemplates error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+);
+
+// Product Card Carousel Template Functions
+export const createProductCardCarouselTemplate = onCall(
+  { memory: "512MiB", timeoutSeconds: 300 },
+  async (request) => {
+    try {
+      console.log("🛍️ createProductCardCarouselTemplate called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await ProductCardCarouselHandler.createProductCardCarouselTemplate(
+        data,
+        userId
+      );
+    } catch (error) {
+      console.error("❌ createProductCardCarouselTemplate error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+);
+
+export const deleteProductCardCarouselTemplate = onCall(
+  { memory: "512MiB", timeoutSeconds: 300 },
+  async (request) => {
+    try {
+      console.log("🗑️ deleteProductCardCarouselTemplate called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await ProductCardCarouselHandler.deleteProductCardCarouselTemplate(
+        data,
+        userId
+      );
+    } catch (error) {
+      console.error("❌ deleteProductCardCarouselTemplate error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+);
+
+export const getProductCardCarouselTemplates = onCall(
+  { memory: "512MiB", timeoutSeconds: 300 },
+  async (request) => {
+    try {
+      console.log("📋 getProductCardCarouselTemplates called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await ProductCardCarouselHandler.getProductCardCarouselTemplates(
+        data,
+        userId
+      );
+    } catch (error) {
+      console.error("❌ getProductCardCarouselTemplates error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),

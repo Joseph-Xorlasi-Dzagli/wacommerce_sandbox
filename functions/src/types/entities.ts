@@ -190,3 +190,19 @@ export interface ResumableUploadSession {
   completed_at?: any;
   error?: string;
 }
+
+export interface ProductCardCarouselTemplate {
+  id: string;
+  business_id: string;
+  waba_id: string;
+  template_name: string;
+  product_name: string;
+  product_count: number;
+  template_id: string;
+  status: "pending" | "approved" | "rejected" | "disabled";
+  created_at?: any;
+  updated_at?: any;
+  approved_at?: any;
+  rejected_at?: any;
+  rejection_reason?: string;
+}

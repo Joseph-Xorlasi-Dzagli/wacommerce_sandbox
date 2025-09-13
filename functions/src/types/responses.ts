@@ -97,3 +97,51 @@ export interface ResumableUploadResponse extends BaseResponse {
   fileSize?: number;
   mimeType?: string;
 }
+
+// New response interfaces for product card carousel templates
+export interface CreateProductCardCarouselResponse extends BaseResponse {
+  templateId?: string;
+  templateName?: string;
+  productName?: string;
+  productCount?: number;
+  wabaId?: string;
+  created_at?: any;
+}
+
+export interface DeleteProductCardCarouselResponse extends BaseResponse {
+  templateId?: string;
+  templateName?: string;
+  deleted_at?: any;
+}
+
+export interface GetProductCardCarouselResponse extends BaseResponse {
+  templates?: Array<{
+    id: string;
+    name: string;
+    productName: string;
+    productCount: number;
+    status: string;
+    created_at: any;
+    updated_at: any;
+  }>;
+  total?: number;
+}
+
+export interface DeleteProductCardCarouselResponse extends BaseResponse {
+  templateId?: string;
+  templateName?: string;
+  deleted_at?: any;
+}
+
+export interface GetProductCardCarouselResponse extends BaseResponse {
+  templates?: Array<{
+    id: string;
+    name: string;
+    productName: string;
+    productCount: number;
+    status: string;
+    created_at: any;
+    updated_at: any;
+  }>;
+  total?: number;
+}

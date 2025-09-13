@@ -95,6 +95,30 @@ export interface GetMediaCardCarouselRequest {
   templateId?: string;
 }
 
+// New interfaces for product card carousel templates
+export interface CreateProductCardCarouselRequest {
+  businessId: string;
+  templateName: string;
+  productName: string;
+  productCount: number; // Number of product cards to create
+  wabaId: string;
+  accessToken: string;
+}
+
+export interface DeleteProductCardCarouselRequest {
+  businessId: string;
+  templateName: string;
+  wabaId: string;
+  accessToken: string;
+}
+
+export interface GetProductCardCarouselRequest {
+  businessId: string;
+  wabaId: string;
+  accessToken: string;
+  templateName?: string;
+}
+
 // Response interfaces for better type safety
 export interface UploadMediaResponse {
   success: boolean;

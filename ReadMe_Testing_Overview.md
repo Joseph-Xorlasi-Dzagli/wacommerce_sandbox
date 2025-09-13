@@ -163,12 +163,23 @@ createMediaCardCarouselTemplate({
 });
 
 
-deleteMediaCardCarouselTemplate({"data":{
-      businessId: "R7CeDIFCL3BtQRbPrM1X",
-      templateName: "spice_mixes_13_09_2025_16_37_47",
-      wabaId: "1112335964080498",
-      accessToken: "EAAUcGmSqAegBPbMjlj0MTMqZBiNsl60EfoTZAyAKLFcrMj0X1tCRNoSfkcnAVrBSAYiw4gIYbTFnqZCUmuvn4QKOSjf034ysvN9ZBzAZB4nszu29FRsSylFi2VnACKb8iFAx0CPGqeAhqrcPfhqGPt4b1z8fs3ZC2lP4cB65TVubql2wP8mKt1mKxWN0dSBQZDZD",
-    }})
+deleteMediaCardCarouselTemplate(
+  {"data":{
+    businessId: "R7CeDIFCL3BtQRbPrM1X",
+    templateName: "spice_mixes_13_09_2025_16_37_47",
+    wabaId: "1112335964080498",
+    accessToken: "EAAUcGmSqAegBPbMjlj0MTMqZBiNsl60EfoTZAyAKLFcrMj0X1tCRNoSfkcnAVrBSAYiw4gIYbTFnqZCUmuvn4QKOSjf034ysvN9ZBzAZB4nszu29FRsSylFi2VnACKb8iFAx0CPGqeAhqrcPfhqGPt4b1z8fs3ZC2lP4cB65TVubql2wP8mKt1mKxWN0dSBQZDZD",
+  }})
+
+
+  createProductCardCarouselTemplate({"data":{
+  businessId: "R7CeDIFCL3BtQRbPrM1X",
+  templateName: "browse_product_options_v3",
+  productName: "Samsung Galaxy S21",
+  productCount: 3, // Number of product cards to create
+  wabaId: "1112335964080498",
+  accessToken: "EAAUcGmSqAegBPbMjlj0MTMqZBiNsl60EfoTZAyAKLFcrMj0X1tCRNoSfkcnAVrBSAYiw4gIYbTFnqZCUmuvn4QKOSjf034ysvN9ZBzAZB4nszu29FRsSylFi2VnACKb8iFAx0CPGqeAhqrcPfhqGPt4b1z8fs3ZC2lP4cB65TVubql2wP8mKt1mKxWN0dSBQZDZD",
+}})
 ```
 
 

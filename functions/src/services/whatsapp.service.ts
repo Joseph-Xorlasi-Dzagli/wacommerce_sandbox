@@ -485,7 +485,7 @@ export class WhatsAppService {
     imageHandles: string[]
   ): Promise<{ templateId: string; templateName: string }> {
     // Sanitize template name
-    
+
     let newTemplateName = templateName.replace(/[ :\/-]/g, "_").toLowerCase();
     try {
       const templatePayload = {
@@ -545,7 +545,6 @@ export class WhatsAppService {
         }
       );
 
-      
       Logger.info("Media card carousel template created", {
         wabaId,
         newTemplateName,
@@ -582,7 +581,9 @@ export class WhatsAppService {
   ): Promise<void> {
     try {
       await axios.delete(
-        `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${wabaId}/message_templates?name=${encodeURIComponent(templateName)}`,
+        `${APP_CONFIG.WHATSAPP.BASE_URL}/${
+          APP_CONFIG.WHATSAPP.API_VERSION
+        }/${wabaId}/message_templates?name=${encodeURIComponent(templateName)}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -642,6 +643,180 @@ export class WhatsAppService {
       throw new HttpsError(
         "internal",
         "Failed to get media card carousel templates",
+        (error as Error).message
+      );
+    }
+  }
+
+  // New methods for product card carousel templates
+  static async createProductCardCarouselTemplate(
+    wabaId: string,
+    accessToken: string,
+    templateName: string,
+    productName: string,
+    productCount: number
+  ): Promise<{ templateId: string; templateName: string }> {
+    try {
+      // Sanitize template name
+      let newTemplateName = templateName.replace(/[ :\/-]/g, "_").toLowerCase();
+
+      const templatePayload = {
+        name: newTemplateName,
+        language: "en_US",
+        category: "marketing",
+        components: [
+          {
+            type: "body",
+            text: 'Browse available options for: \n*{{1}}*.\n\nTap *"View"* to learn more or order your preferred product option',
+            example: {
+              body_text: [productName],
+            },
+          },
+          {
+            type: "carousel",
+            cards: Array.from({ length: productCount }, () => ({
+              components: [
+                {
+                  type: "header",
+                  format: "product",
+                },
+                {
+                  type: "buttons",
+                  buttons: [
+                    {
+                      type: "spm",
+                      text: "View",
+                    },
+                  ],
+                },
+              ],
+            })),
+          },
+        ],
+      };
+
+      const response = await axios.post(
+        `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${wabaId}/message_templates`,
+        templatePayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          timeout: 30000,
+        }
+      );
+
+      Logger.info("Product card carousel template created", {
+        wabaId,
+        newTemplateName,
+        templateId: response.data.id,
+        productCount,
+      });
+
+      return { templateId: response.data.id, templateName: newTemplateName };
+    } catch (error) {
+      console.error(
+        "Response from failed product card carousel template creation:",
+        (error as any)?.response
+      );
+      Logger.error("Failed to create product card carousel template", error, {
+        wabaId,
+        newTemplateName: templateName,
+        productCount,
+      });
+      throw new HttpsError(
+        "internal",
+        "Failed to create product card carousel template",
+        (error as Error).message
+      );
+    }
+  }
+
+  static async deleteProductCardCarouselTemplate(
+    wabaId: string,
+    accessToken: string,
+    templateName: string
+  ): Promise<void> {
+    try {
+      // First, get all templates to find the one with matching name
+      const templates = await this.getProductCardCarouselTemplates(
+        wabaId,
+        accessToken
+      );
+
+      const template = templates.find((t) => t.name === templateName);
+      if (!template) {
+        throw new HttpsError("not-found", "Template not found");
+      }
+
+      await axios.delete(
+        `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${wabaId}/message_templates/${template.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          timeout: 30000,
+        }
+      );
+
+      Logger.info("Product card carousel template deleted", {
+        wabaId,
+        templateName,
+        templateId: template.id,
+      });
+    } catch (error) {
+      Logger.error("Failed to delete product card carousel template", error, {
+        wabaId,
+        templateName,
+      });
+      throw new HttpsError(
+        "internal",
+        "Failed to delete product card carousel template",
+        (error as Error).message
+      );
+    }
+  }
+
+  static async getProductCardCarouselTemplates(
+    wabaId: string,
+    accessToken: string,
+    templateName?: string
+  ): Promise<any[]> {
+    try {
+      const url = templateName
+        ? `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${wabaId}/message_templates`
+        : `${APP_CONFIG.WHATSAPP.BASE_URL}/${APP_CONFIG.WHATSAPP.API_VERSION}/${wabaId}/message_templates`;
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        timeout: 30000,
+      });
+
+      let templates = response.data.data || [];
+
+      // Filter by template name if specified
+      if (templateName) {
+        templates = templates.filter((t: any) => t.name === templateName);
+      }
+
+      Logger.info("Product card carousel templates retrieved", {
+        wabaId,
+        templateName,
+        templatesCount: templates.length,
+      });
+
+      return templates;
+    } catch (error) {
+      Logger.error("Failed to get product card carousel templates", error, {
+        wabaId,
+        templateName,
+      });
+      throw new HttpsError(
+        "internal",
+        "Failed to get product card carousel templates",
         (error as Error).message
       );
     }
