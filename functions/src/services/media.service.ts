@@ -10,6 +10,28 @@ export class MediaService {
     return getFirestore();
   }
 
+  static async downloadImage(imageUrl: string): Promise<Buffer> {
+    try {
+      const response = await axios.get(imageUrl, {
+        responseType: "arraybuffer",
+        timeout: 30000,
+        maxContentLength: 50 * 1024 * 1024,
+      });
+
+      const imageBuffer = Buffer.from(response.data);
+
+      Logger.info("Image downloaded", {
+        imageUrl,
+        size: imageBuffer.length,
+      });
+
+      return imageBuffer;
+    } catch (error) {
+      Logger.error("Image download failed", error, { imageUrl });
+      throw new Error(`Failed to download image: ${(error as Error).message}`);
+    }
+  }
+
   static async optimizeImage(
     imageUrl: string,
     purpose: string

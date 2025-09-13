@@ -131,6 +131,44 @@ updateProductInventory({
   businessId: "test-business-123",
   updateFields: ["quantity", "price"]
 })
+
+
+
+
+createMediaCardCarouselTemplate({
+  data: {
+    businessId: "R7CeDIFCL3BtQRbPrM1X",
+    categoryName: "spice_mixes",
+    images: [
+      {
+        url: "https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c08780809.jpg",
+        filename: "chicken-mix.jpg",
+        mimeType: "image/jpg",
+      },
+      {
+        url: "https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c08780809.jpg",
+        filename: "beef-mix.jpg",
+        mimeType: "image/jpg",
+      },
+      {
+        url: "https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c08780809.jpg",
+        filename: "fish-mix.jpg",
+        mimeType: "image/jpg",
+      },
+    ],
+    wabaId: "1112335964080498",
+    accessToken:
+      "EAAUcGmSqAegBPbMjlj0MTMqZBiNsl60EfoTZAyAKLFcrMj0X1tCRNoSfkcnAVrBSAYiw4gIYbTFnqZCUmuvn4QKOSjf034ysvN9ZBzAZB4nszu29FRsSylFi2VnACKb8iFAx0CPGqeAhqrcPfhqGPt4b1z8fs3ZC2lP4cB65TVubql2wP8mKt1mKxWN0dSBQZDZD",
+  },
+});
+
+
+deleteMediaCardCarouselTemplate({"data":{
+      businessId: "R7CeDIFCL3BtQRbPrM1X",
+      templateName: "spice_mixes_13_09_2025_16_37_47",
+      wabaId: "1112335964080498",
+      accessToken: "EAAUcGmSqAegBPbMjlj0MTMqZBiNsl60EfoTZAyAKLFcrMj0X1tCRNoSfkcnAVrBSAYiw4gIYbTFnqZCUmuvn4QKOSjf034ysvN9ZBzAZB4nszu29FRsSylFi2VnACKb8iFAx0CPGqeAhqrcPfhqGPt4b1z8fs3ZC2lP4cB65TVubql2wP8mKt1mKxWN0dSBQZDZD",
+    }})
 ```
 
 

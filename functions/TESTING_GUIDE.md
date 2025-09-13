@@ -127,6 +127,35 @@ sendOrderNotification({
   customMessage: "Test notification message",
 });
 
+
+
+createMediaCardCarouselTemplate({
+  data: {
+    businessId: "your-business-id",
+    categoryName: "Spice Mixes",
+    images: [
+      {
+        url: "hhttps://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c08780809.jpg",
+        filename: "chicken-mix.jpg",
+        mimeType: "image/jpg",
+      },
+      {
+        url: "hhttps://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c08780809.jpg",
+        filename: "beef-mix.jpg",
+        mimeType: "image/jpg",
+      },
+      {
+        url: "hhttps://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c08780809.jpg",
+        filename: "fish-mix.jpg",
+        mimeType: "image/jpg",
+      },
+    ],
+    wabaId: "1112335964080498",
+    accessToken:
+      "EAAUcGmSqAegBPbMjlj0MTMqZBiNsl60EfoTZAyAKLFcrMj0X1tCRNoSfkcnAVrBSAYiw4gIYbTFnqZCUmuvn4QKOSjf034ysvN9ZBzAZB4nszu29FRsSylFi2VnACKb8iFAx0CPGqeAhqrcPfhqGPt4b1z8fs3ZC2lP4cB65TVubql2wP8mKt1mKxWN0dSBQZDZD",
+  },
+});
+
 ```
 
 ### Method 2: Test Scripts

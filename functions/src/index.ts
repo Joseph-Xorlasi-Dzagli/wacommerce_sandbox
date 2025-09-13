@@ -6,6 +6,7 @@ import { initializeApp } from "firebase-admin/app";
 import { CatalogHandler } from "./handlers/catalog.handler";
 import { MediaHandler } from "./handlers/media.handler";
 import { NotificationHandler } from "./handlers/notification.handler";
+import { MediaCardCarouselHandler } from "./handlers/media-card-carousel.handler";
 import { APP_CONFIG } from "./config/constants";
 
 // Initialize Firebase Admin
@@ -314,6 +315,106 @@ export const whatsappWebhook = onRequest(
     } catch (error) {
       console.error("❌ Webhook processing error:", error);
       res.status(500).send("Error");
+    }
+  }
+);
+
+// Media Card Carousel Template Functions
+export const createMediaCardCarouselTemplate = onCall(
+  { memory: "1GiB", timeoutSeconds: 540 },
+  async (request) => {
+    try {
+      console.log("🎠 createMediaCardCarouselTemplate called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await MediaCardCarouselHandler.createMediaCardCarouselTemplate(
+        data,
+        userId
+      );
+    } catch (error) {
+      console.error("❌ createMediaCardCarouselTemplate error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+);
+
+export const deleteMediaCardCarouselTemplate = onCall(
+  { memory: "512MiB", timeoutSeconds: 300 },
+  async (request) => {
+    try {
+      console.log("🗑️ deleteMediaCardCarouselTemplate called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await MediaCardCarouselHandler.deleteMediaCardCarouselTemplate(
+        data,
+        userId
+      );
+    } catch (error) {
+      console.error("❌ deleteMediaCardCarouselTemplate error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+);
+
+export const getMediaCardCarouselTemplates = onCall(
+  { memory: "512MiB", timeoutSeconds: 300 },
+  async (request) => {
+    try {
+      console.log("📋 getMediaCardCarouselTemplates called");
+      console.log("Request data:", request.data);
+
+      const { data, auth } = request;
+
+      if (!data) {
+        throw new Error("No data provided in request");
+      }
+
+      const userId = auth?.uid || "Sj49CwIhb3YMjEFl0HmgbRRrfNH3";
+
+      if (!userId) {
+        throw new Error("Authentication required");
+      }
+
+      return await MediaCardCarouselHandler.getMediaCardCarouselTemplates(
+        data,
+        userId
+      );
+    } catch (error) {
+      console.error("❌ getMediaCardCarouselTemplates error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 );

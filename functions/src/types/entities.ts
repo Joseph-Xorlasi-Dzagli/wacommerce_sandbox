@@ -160,3 +160,33 @@ export interface IncomingMessage {
   business_id?: string;
   created_at?: any;
 }
+
+export interface MediaCardCarouselTemplate {
+  id: string;
+  business_id: string;
+  waba_id: string;
+  template_name: string;
+  category_name: string;
+  template_id: string;
+  status: "pending" | "approved" | "rejected" | "disabled";
+  image_handles: string[];
+  created_at?: any;
+  updated_at?: any;
+  approved_at?: any;
+  rejected_at?: any;
+  rejection_reason?: string;
+}
+
+export interface ResumableUploadSession {
+  id: string;
+  business_id: string;
+  upload_session_id: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  file_handle?: string;
+  status: "pending" | "uploading" | "completed" | "failed";
+  created_at?: any;
+  completed_at?: any;
+  error?: string;
+}

@@ -62,3 +62,38 @@ export interface NotificationHistoryResponse extends BaseResponse {
   }>;
   total: number;
 }
+
+// New response interfaces for media card carousel templates
+export interface CreateMediaCardCarouselResponse extends BaseResponse {
+  templateId?: string;
+  templateName?: string;
+  categoryName?: string;
+  imageHandles?: string[];
+  wabaId?: string;
+  created_at?: any;
+}
+
+export interface DeleteMediaCardCarouselResponse extends BaseResponse {
+  templateId?: string;
+  templateName?: string;
+  deleted_at?: any;
+}
+
+export interface GetMediaCardCarouselResponse extends BaseResponse {
+  templates?: Array<{
+    id: string;
+    name: string;
+    category: string;
+    status: string;
+    created_at: any;
+    updated_at: any;
+  }>;
+  total?: number;
+}
+
+export interface ResumableUploadResponse extends BaseResponse {
+  uploadSessionId?: string;
+  fileHandle?: string;
+  fileSize?: number;
+  mimeType?: string;
+}

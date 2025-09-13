@@ -68,6 +68,33 @@ export interface GetDeliveryStatsRequest {
   endDate: string; // ISO date string
 }
 
+// New interfaces for media card carousel templates
+export interface CreateMediaCardCarouselRequest {
+  businessId: string;
+  categoryName: string;
+  images: Array<{
+    url: string;
+    filename: string;
+    mimeType: string;
+  }>;
+  wabaId: string;
+  accessToken: string;
+}
+
+export interface DeleteMediaCardCarouselRequest {
+  businessId: string;
+  templateName: string;
+  wabaId: string;
+  accessToken: string;
+}
+
+export interface GetMediaCardCarouselRequest {
+  businessId: string;
+  wabaId: string;
+  accessToken: string;
+  templateId?: string;
+}
+
 // Response interfaces for better type safety
 export interface UploadMediaResponse {
   success: boolean;
