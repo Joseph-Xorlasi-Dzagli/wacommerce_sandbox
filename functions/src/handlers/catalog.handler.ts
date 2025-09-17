@@ -1,16 +1,16 @@
 // functions/src/handlers/catalog.handler.ts
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { AuthService } from "../services/auth.service";
-import { WhatsAppService } from "../services/whatsapp.service";
-import { MediaService } from "../services/media.service";
-import { NotificationService } from "../services/notification.service";
-import { Logger } from "../utils/logger";
-import { Helpers } from "../utils/helpers";
-import { APP_CONFIG } from "../config/constants";
-import { SyncCatalogRequest, SyncInventoryRequest } from "../types/requests";
-import { Product, ProductOption } from "../types/entities";
-import { SyncCatalogResponse, BaseResponse } from "../types/responses";
+import { AuthService } from "../services/auth.service.js";
+import { WhatsAppService } from "../services/whatsapp.service.js";
+import { MediaService } from "../services/media.service.js";
+import { NotificationService } from "../services/notification.service.js";
+import { Logger } from "../utils/logger.js";
+import { Helpers } from "../utils/helpers.js";
+import { APP_CONFIG } from "../config/constants.js";
+import { SyncCatalogRequest, SyncInventoryRequest } from "../types/requests.js";
+import { Product, ProductOption } from "../types/entities.js";
+import { SyncCatalogResponse, BaseResponse } from "../types/responses.js";
 
 export class CatalogHandler {
   private static get db() {
@@ -309,7 +309,7 @@ export class CatalogHandler {
       const collectedById: Record<string, ProductOption> = {};
       for (const idChunk of optionIdChunks) {
         const docSnaps = await Promise.all(
-          idChunk.map((id) =>
+          idChunk.map((id: string) =>
             this.db.collection("product_options").doc(id).get()
           )
         );
@@ -371,7 +371,7 @@ export class CatalogHandler {
       const collectedById: Record<string, ProductOption> = {};
       for (const idChunk of optionIdChunks) {
         const docSnaps = await Promise.all(
-          idChunk.map((id) =>
+          idChunk.map((id: string) =>
             this.db.collection("product_options").doc(id).get()
           )
         );
@@ -661,6 +661,10 @@ export class CatalogHandler {
     if (updateFields.includes("availability")) {
       payload.availability =
         productOption.stock > 0 ? "in stock" : "out of stock";
+    }
+
+    if (updateFields.includes("quantity")) {
+      payload.quantity = productOption.stock;
     }
 
     if (updateFields.includes("image_url") && productOption.whatsapp_image_id) {

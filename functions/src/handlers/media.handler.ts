@@ -1,15 +1,15 @@
 // functions/src/handlers/media.handler.ts
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { AuthService } from "../services/auth.service";
-import { WhatsAppService } from "../services/whatsapp.service";
-import { MediaService } from "../services/media.service";
-import { NotificationService } from "../services/notification.service";
-import { Logger } from "../utils/logger";
-import { Helpers } from "../utils/helpers";
-import { Validator } from "../utils/validation";
-import { UploadMediaRequest, UploadMediaResponse } from "../types/requests";
-import { APP_CONFIG } from "../config/constants";
+import { AuthService } from "../services/auth.service.js";
+import { WhatsAppService } from "../services/whatsapp.service.js";
+import { MediaService } from "../services/media.service.js";
+import { NotificationService } from "../services/notification.service.js";
+import { Logger } from "../utils/logger.js";
+import { Helpers } from "../utils/helpers.js";
+import { Validator } from "../utils/validation.js";
+import { UploadMediaRequest, UploadMediaResponse } from "../types/requests.js";
+import { APP_CONFIG } from "../config/constants.js";
 
 export class MediaHandler {
   private static get db() {
@@ -137,7 +137,7 @@ export class MediaHandler {
       const batches = Helpers.chunkArray(products, 5);
 
       for (const batch of batches) {
-        const batchPromises = batch.map(async (product) => {
+        const batchPromises = batch.map(async (product: { id: any; }) => {
           const productId = product.id;
           try {
             if (

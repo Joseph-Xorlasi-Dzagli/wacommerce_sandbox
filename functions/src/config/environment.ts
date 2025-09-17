@@ -1,23 +1,23 @@
-// config/environment.ts
+// functions/src/config/environment.ts
 
-import * as functions from "firebase-functions";
+import { defineSecret, defineString } from "firebase-functions/params";
+
+// Define parameters - these replace functions.config()
+const whatsappWebhookSecret = defineSecret("WHATSAPP_WEBHOOK_SECRET");
+const encryptionKey = defineSecret("ENCRYPTION_KEY"); 
+const storageBucket = defineString("STORAGE_BUCKET");
 
 export class Environment {
   static get whatsappWebhookSecret(): string {
-    return functions.config().whatsapp?.webhook_secret || "LetsbuildApsel";
+    return whatsappWebhookSecret.value() || "LetsbuildApsel";
   }
 
   static get encryptionKey(): string {
-    return (
-      functions.config().encryption?.key || "KbcLxS5SnRtLIOhkZdOllTK2enJeLr0tmmkgpxCmkhSJVJFSaOmMoDF8LabZHuob"
-    );
+    return encryptionKey.value() || "KbcLxS5SnRtLIOhkZdOllTK2enJeLr0tmmkgpxCmkhSJVJFSaOmMoDF8LabZHuob";
   }
 
   static get storageBucket(): string {
-    return (
-      functions.config().storage?.bucket ||
-      "gs://apsel-c9e99.firebasestorage.app"
-    );
+    return storageBucket.value() || "gs://apsel-c9e99.firebasestorage.app";
   }
 
   static get projectId(): string {

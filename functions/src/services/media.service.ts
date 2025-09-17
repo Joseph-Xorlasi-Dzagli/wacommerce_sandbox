@@ -2,8 +2,8 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import axios from "axios";
 import sharp from "sharp";
-import { APP_CONFIG } from "../config/constants";
-import { Logger } from "../utils/logger";
+import { APP_CONFIG } from "../config/constants.js";
+import { Logger } from "../utils/logger.js";
 
 export class MediaService {
   private static get db() {

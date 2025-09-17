@@ -1,6 +1,6 @@
 // functions/src/services/notification.service.ts
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { Logger } from "../utils/logger";
+import { Logger } from "../utils/logger.js";
 
 export class NotificationService {
   private static get db() {

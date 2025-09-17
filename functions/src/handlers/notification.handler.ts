@@ -1,12 +1,12 @@
 // functions/src/handlers/notification.handler.ts
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { AuthService } from "../services/auth.service";
-import { WhatsAppService } from "../services/whatsapp.service";
-import { NotificationService } from "../services/notification.service";
-import { Logger } from "../utils/logger";
-import { Helpers } from "../utils/helpers";
-import { SendNotificationResponse } from "../types/requests";
+import { AuthService } from "../services/auth.service.js";
+import { WhatsAppService } from "../services/whatsapp.service.js";
+import { NotificationService } from "../services/notification.service.js";
+import { Logger } from "../utils/logger.js";
+import { Helpers } from "../utils/helpers.js";
+import { SendNotificationResponse } from "../types/requests.js";
 
 export class NotificationHandler {
   private static get db() {
@@ -304,7 +304,7 @@ export class NotificationHandler {
       const batches = Helpers.chunkArray(orderIds, 5);
 
       for (const batch of batches) {
-        const batchPromises = batch.map(async (orderId) => {
+        const batchPromises = batch.map(async (orderId: string) => {
           try {
             await this.sendOrderNotification(
               orderId,

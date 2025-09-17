@@ -2,10 +2,10 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import axios from "axios";
-import { APP_CONFIG } from "../config/constants";
-import { Encryption } from "../utils/encryption";
-import { Logger } from "../utils/logger";
-import type { WhatsAppConfig } from "../types/entities";
+import { APP_CONFIG } from "../config/constants.js";
+import { Encryption } from "../utils/encryption.js";
+import { Logger } from "../utils/logger.js";
+import type { WhatsAppConfig } from "../types/entities.js";
 
 export class WhatsAppService {
   private static get db() {
@@ -112,6 +112,7 @@ export class WhatsAppService {
         description: product.description || "",
         price: `${Math.round(product.price || 0)} GHS`,
         availability: product.availability || "in stock",
+        inventory: product.quantity || 0,
         condition: "new",
         brand: product.brand || "Default Brand",
         link: product.url || `https://yourapp.com/products/${product.id}`,

@@ -2,13 +2,16 @@
 
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onCall, onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { initializeApp } from "firebase-admin/app";
-import { CatalogHandler } from "./handlers/catalog.handler";
-import { MediaHandler } from "./handlers/media.handler";
-import { NotificationHandler } from "./handlers/notification.handler";
-import { MediaCardCarouselHandler } from "./handlers/media-card-carousel.handler";
-import { ProductCardCarouselHandler } from "./handlers/product-card-carousel.handler";
-import { APP_CONFIG } from "./config/constants";
+import { CatalogHandler } from "./handlers/catalog.handler.js";
+import { MediaHandler } from "./handlers/media.handler.js";
+import { NotificationHandler } from "./handlers/notification.handler.js";
+import { MediaCardCarouselHandler } from "./handlers/media-card-carousel.handler.js";
+import { ProductCardCarouselHandler } from "./handlers/product-card-carousel.handler.js";
+
+// Define secrets for production use
+const webhookVerifyToken = defineSecret("WHATSAPP_WEBHOOK_VERIFY_TOKEN");
 
 // Initialize Firebase Admin
 initializeApp();
@@ -38,7 +41,7 @@ export const syncProductCatalog = onCall(
   { memory: "1GiB", timeoutSeconds: 540 },
   async (request) => {
     try {
-      console.log("🔄 syncProductCatalog called");
+      console.log("📄 syncProductCatalog called");
 
       // Safe logging - only log the data, not the entire request
       console.log("📦 Request data:", request.data);
@@ -96,7 +99,7 @@ export const syncProductCatalog = onCall(
  *
  * updateProductInventory({
  *   data: {
- *     productId: "your-product-id",
+ *     productOptionId: "your-product-option-id",
  *     businessId: "your-business-id",
  *     updateFields: ["quantity", "price"] // array of fields to update
  *   },
@@ -127,8 +130,8 @@ export const updateProductInventory = onCall(
         throw new Error("Authentication required");
       }
 
-      return await CatalogHandler.updateProduct(
-        data.productId,
+      return await CatalogHandler.updateProductOption(
+        data.productOptionId,
         data.businessId,
         userId,
         data.updateFields
@@ -280,9 +283,12 @@ export const sendOrderNotification = onCall(
   }
 );
 
-// Webhook Handler
+// Webhook Handler with proper secret management
 export const whatsappWebhook = onRequest(
-  { memory: "256MiB" },
+  {
+    memory: "256MiB",
+    secrets: [webhookVerifyToken],
+  },
   async (req, res) => {
     try {
       if (req.method === "GET") {
@@ -293,10 +299,13 @@ export const whatsappWebhook = onRequest(
 
         console.log("🔍 Webhook verification:", { mode, token, challenge });
 
-        if (
-          mode === "subscribe" &&
-          token === APP_CONFIG.WHATSAPP.WEBHOOK_VERIFY_TOKEN
-        ) {
+        // Use secret in production, fallback to hardcoded for local development
+        const expectedToken =
+          process.env.NODE_ENV === "production"
+            ? webhookVerifyToken.value()
+            : "LetsbuildApsel"; // Your local development token
+
+        if (mode === "subscribe" && token === expectedToken) {
           console.log("✅ Webhook verified successfully");
           res.status(200).send(challenge);
         } else {

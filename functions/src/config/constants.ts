@@ -7,7 +7,7 @@ export const APP_CONFIG = {
     BATCH_SIZE: 10,
     MEDIA_EXPIRES_DAYS: 30,
     MAX_RETRIES: 3,
-    WEBHOOK_VERIFY_TOKEN: "LetsbuildApsel",
+    // WEBHOOK_VERIFY_TOKEN removed - now using parameterized config
     RATE_LIMIT: {
       MESSAGES_PER_SECOND: 20,
       CATALOG_OPERATIONS_PER_MINUTE: 100,
@@ -95,4 +95,3 @@ export const MEDIA_PURPOSES = {
   CAROUSEL: "carousel",
   FALLBACK: "fallback",
 } as const;
-

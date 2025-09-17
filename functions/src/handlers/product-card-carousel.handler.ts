@@ -1,21 +1,21 @@
 // functions/src/handlers/product-card-carousel.handler.ts
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { AuthService } from "../services/auth.service";
-import { WhatsAppService } from "../services/whatsapp.service";
-import { Logger } from "../utils/logger";
-import { Helpers } from "../utils/helpers";
+import { AuthService } from "../services/auth.service.js";
+import { WhatsAppService } from "../services/whatsapp.service.js";
+import { Logger } from "../utils/logger.js";
+import { Helpers } from "../utils/helpers.js";
 import {
   CreateProductCardCarouselRequest,
   DeleteProductCardCarouselRequest,
   GetProductCardCarouselRequest,
-} from "../types/requests";
+} from "../types/requests.js";
 import {
   CreateProductCardCarouselResponse,
   DeleteProductCardCarouselResponse,
   GetProductCardCarouselResponse,
-} from "../types/responses";
-import { ProductCardCarouselTemplate } from "../types/entities";
+} from "../types/responses.js";
+import { ProductCardCarouselTemplate } from "../types/entities.js";
 
 export class ProductCardCarouselHandler {
   private static get db() {
@@ -284,7 +284,7 @@ export class ProductCardCarouselHandler {
       }
 
       // Combine WhatsApp and local data
-      const templates = whatsappTemplates.map((whatsappTemplate) => {
+      const templates = whatsappTemplates.map((whatsappTemplate: { id: any; name: any; status: any; created_time: any; modified_time: any; }) => {
         const localTemplate = localTemplates.find(
           (local) => local.template_id === whatsappTemplate.id
         );

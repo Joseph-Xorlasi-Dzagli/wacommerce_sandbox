@@ -1,7 +1,7 @@
 // functions/src/services/auth.service.ts
 import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { Logger } from "../utils/logger";
+import { Logger } from "../utils/logger.js";
 
 export class AuthService {
   private static get db() {
